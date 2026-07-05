@@ -11,7 +11,7 @@ This repo is a mess. Its a workspace more than anything.
 ``sublime-text`` and ``zed`` directories contain Octopus themes for each IDE respectively.
 
 Install in IntelliJ:
-1. Download the package found at (https://github.com/ironssamuel/octopus-themes/releases/tag/v1.0.0) [https://github.com/ironssamuel/octopus-themes/releases/tag/v1.0.0]
+1. Download the package found at [https://github.com/ironssamuel/octopus-themes/releases/tag/v1.0.0](https://github.com/ironssamuel/octopus-themes/releases/tag/v1.0.0)
 2. In IntelliJ: Settings/Preferences → Plugins → ⚙️ → Install Plugin from Disk... → select the ZIP
 3. Rstart IntelliJ.
 
