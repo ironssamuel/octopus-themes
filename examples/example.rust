@@ -1,0 +1,94 @@
+// Octopus theme test — Rust
+// Most-admired language for nine years running (Stack Overflow 2025),
+// growing fast in systems/infra tooling. Exercises genuinely different
+// syntax shapes: lifetimes ('a), macros (println!), traits, pattern
+// matching, generics, Result/Option — none of which appear in the
+// C-family languages tested so far.
+
+use std::collections::HashMap;
+use std::fmt;
+
+#[derive(Debug, Clone, PartialEq)]
+enum Status {
+    Pending,
+    Succeeded,
+    Failed { reason: String },
+}
+
+impl fmt::Display for Status {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Status::Pending => write!(f, "pending"),
+            Status::Succeeded => write!(f, "succeeded"),
+            Status::Failed { reason } => write!(f, "failed: {reason}"),
+        }
+    }
+}
+
+struct Release<'a> {
+    version: &'a str,
+    environment: &'a str,
+    status: Status,
+}
+
+trait Deployable {
+    fn deploy(&mut self) -> Result<(), String>;
+    fn is_healthy(&self) -> bool {
+        false
+    }
+}
+
+impl<'a> Deployable for Release<'a> {
+    fn deploy(&mut self) -> Result<(), String> {
+        if self.version.is_empty() {
+            return Err("version cannot be empty".to_string());
+        }
+        self.status = Status::Succeeded;
+        Ok(())
+    }
+
+    fn is_healthy(&self) -> bool {
+        matches!(self.status, Status::Succeeded)
+    }
+}
+
+fn deploy_with_retry<T: Deployable>(target: &mut T, max_attempts: u32) -> Result<(), String> {
+    let mut last_error = None;
+
+    for attempt in 1..=max_attempts {
+        match target.deploy() {
+            Ok(()) => return Ok(()),
+            Err(e) => {
+                println!("attempt {attempt}/{max_attempts} failed: {e}");
+                last_error = Some(e);
+            }
+        }
+    }
+
+    Err(last_error.unwrap_or_else(|| "unknown error".to_string()))
+}
+
+fn summarize(releases: &[Release]) -> HashMap<String, usize> {
+    let mut counts = HashMap::new();
+    for release in releases {
+        *counts.entry(release.status.to_string()).or_insert(0) += 1;
+    }
+    counts
+}
+
+fn main() {
+    let mut release = Release {
+        version: "2.4.1",
+        environment: "production",
+        status: Status::Pending,
+    };
+
+    match deploy_with_retry(&mut release, 3) {
+        Ok(()) => println!("Deployed {} to {}", release.version, release.environment),
+        Err(e) => eprintln!("Deployment failed permanently: {e}"),
+    }
+
+    let releases = vec![release];
+    let summary = summarize(&releases);
+    println!("{:#?}", summary);
+}

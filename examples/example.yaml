@@ -1,0 +1,85 @@
+# Octopus theme test — Infrastructure Engineer persona
+# A Kubernetes manifest for a workload Octopus deploys to via its
+# Kubernetes deployment target. Exercises: YAML keys (property), strings,
+# numbers, comments, list/anchor punctuation, boolean literals
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: production
+  labels:
+    app: order-service
+    managed-by: octopus-deploy
+  annotations:
+    octopus.com/release-version: "#{Octopus.Release.Number}"
+    octopus.com/deployed-by: "#{Octopus.Deployment.CreatedBy.DisplayName}"
+spec:
+  replicas: 3
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: contosoregistry.azurecr.io/order-service:#{Octopus.Action.Package.PackageVersion}
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+            - name: OCTOPUS_ENVIRONMENT_NAME
+              value: "#{Octopus.Environment.Name}"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /api/release/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/release/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      # Ensures pods are spread across nodes for zone resilience
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: order-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: production
+spec:
+  type: ClusterIP
+  selector:
+    app: order-service
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP

@@ -1,0 +1,23 @@
+<idea-plugin>
+    <id>design.octopus.theme.intellij</id>
+    <name>Octopus Theme</name>
+    <vendor url="https://www.octopus.design">Octopus Deploy</vendor>
+
+    <description><![CDATA[
+        Octopus Deploy brand theme for IntelliJ-based IDEs, built from the Octopus Design System
+        color scales. Ports the same Dark and Light variants shipped for Zed and Sublime Text —
+        full IDE chrome (UI theme) plus a matching editor color scheme for syntax highlighting.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!--
+          Each theme.json's "editorScheme" field already registers the matching
+          color scheme, so a separate <bundledColorScheme> here would double-register
+          it (IJ logs "Duplicated scheme ..." for every one declared twice).
+        -->
+        <themeProvider id="OctopusDarkTheme" path="/theme/octopus_dark.theme.json"/>
+        <themeProvider id="OctopusLightTheme" path="/theme/octopus_light.theme.json"/>
+    </extensions>
+</idea-plugin>

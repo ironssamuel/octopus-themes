@@ -1,0 +1,97 @@
+// Octopus theme test — Application Developer persona
+// A minimal ASP.NET Core service exposing release/health info,
+// the kind of app code that gets packaged and deployed by Octopus.
+// Exercises: attribute, keyword, type, enum, generics, string interpolation,
+// nullable reference types, LINQ, records, comment.doc
+
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Contoso.OrderService.Controllers;
+
+/// <summary>
+/// Reports deployment and health metadata for this service instance.
+/// Reads values injected by Octopus at deploy time via environment variables.
+/// </summary>
+[ApiController]
+[Route("api/[controller]")]
+public class ReleaseController : ControllerBase
+{
+    private const int MaxRecentDeployments = 10;
+    private static readonly TimeSpan HealthCacheTtl = TimeSpan.FromSeconds(30);
+
+    public enum DeploymentStatus
+    {
+        Pending,
+        Succeeded,
+        Failed,
+        RolledBack,
+    }
+
+    public record DeploymentInfo(string Version, DeploymentStatus Status, DateTimeOffset DeployedAt)
+    {
+        public bool IsHealthy => Status is DeploymentStatus.Succeeded;
+    }
+
+    private readonly List<DeploymentInfo> _history = new();
+    private readonly ILogger<ReleaseController> _logger;
+
+    public ReleaseController(ILogger<ReleaseController> logger)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    [HttpGet("health")]
+    public IActionResult GetHealth()
+    {
+        var version = Environment.GetEnvironmentVariable("OCTOPUS_RELEASE_NUMBER") ?? "unknown";
+        var environment = Environment.GetEnvironmentVariable("OCTOPUS_ENVIRONMENT_NAME") ?? "local";
+
+        _logger.LogInformation($"Health check for release {version} in {environment}");
+
+        return Ok(new
+        {
+            Version = version,
+            Environment = environment,
+            UptimeSeconds = Environment.TickCount64 / 1000,
+            Healthy = true,
+        });
+    }
+
+    [HttpGet("history")]
+    public IActionResult GetRecentDeployments(int? take = null)
+    {
+        var count = Math.Min(take ?? MaxRecentDeployments, MaxRecentDeployments);
+
+        var recent = _history
+            .Where(d => d.DeployedAt > DateTimeOffset.UtcNow.AddDays(-30))
+            .OrderByDescending(d => d.DeployedAt)
+            .Take(count)
+            .Select(d => new { d.Version, Status = d.Status.ToString(), d.DeployedAt })
+            .ToList();
+
+        if (recent.Count == 0)
+        {
+            return NotFound("No deployment history recorded yet.");
+        }
+
+        return Ok(recent);
+    }
+
+    private bool TryRollback(string targetVersion, out string? error)
+    {
+        error = null;
+        var target = _history.FirstOrDefault(d => d.Version == targetVersion);
+
+        if (target is null)
+        {
+            error = $"Version {targetVersion} not found in deployment history.";
+            return false;
+        }
+
+        _history.Add(target with { Status = DeploymentStatus.RolledBack, DeployedAt = DateTimeOffset.UtcNow });
+        return true;
+    }
+}

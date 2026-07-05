@@ -1,0 +1,9 @@
+.DS_Store
+
+# Gradle / IntelliJ plugin build output
+intellij/build/
+intellij/.gradle/
+
+# IDE project files
+.idea/
+*.iml
