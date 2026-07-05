@@ -1,13 +1,17 @@
+# Octopus themes
+
 Themes for IntelliJ, Zed, and Sublime Text based on the Octopus Deploy brand identity.
 
 This repo is a mess. Its a workspace more than anything.
 
 ``/examples`` contains AI-generate sample code files used for previewing the theme across common development cases like Python, Rust, Go, etc. and common deployment cases like YAML and Terraform.
 
-``intellij``, ``sublime-text``, and ``zed`` directories contain Octopus themes for each IDE respectively.
+``intellij`` contains the plugin code and gradle build for constructing the IntelliJ theme plug-in.
+
+``sublime-text`` and ``zed`` directories contain Octopus themes for each IDE respectively.
 
 Install in IntelliJ:
-1. Download the package found at TBD.
+1. Download the package found at (https://github.com/ironssamuel/octopus-themes/releases/tag/v1.0.0)[https://github.com/ironssamuel/octopus-themes/releases/tag/v1.0.0]
 2. In IntelliJ: Settings/Preferences → Plugins → ⚙️ → Install Plugin from Disk... → select the ZIP
 3. Rstart IntelliJ.
 
