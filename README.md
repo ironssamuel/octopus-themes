@@ -2,6 +2,8 @@
 
 Themes for IntelliJ, Zed, and Sublime Text based on the Octopus Deploy brand identity.
 
+![Preview of the Octopus Dark theme in IntelliJ](/examples/intellij.png)
+
 ## Repo info
 
 This repo is a mess. Its a workspace more than anything.
